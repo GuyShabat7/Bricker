@@ -1,5 +1,3 @@
-guy_shabat
-203605985
 
 1) I initially used the design pattern of a strategy.I created an 
 interface for collisionStrategy within a package brick.brick_strategies 
