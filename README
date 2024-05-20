@@ -1,0 +1,127 @@
+guy_shabat
+203605985
+
+1) I initially used the design pattern of a strategy.I created an 
+interface for collisionStrategy within a package brick.brick_strategies 
+with a method called onCollision that takes two parameters of gameObject.
+The Brick class implements the collisionStrategy interface. When a brick 
+collides, the collision class will iterate over the specific behaviors 
+of the brick, and for each specific behavior that exists for the brick,
+the onCollision method of that behavior will be activated
+(which is the strategy class of the specific behavior and is implemented specifically).
+For each strategy class when deleting a brick that implements the specific behavior,
+in the strategy class of that behavior in its onCollision method, the brick will be deleted,
+and the counter of the number of bricks will be decreased by 1. The constructor
+of the strategy classes receives arguments of a gameObject and a counter of the number of bricks.
+The advantage of this method is that it allows hiding the information of the specific 
+behavior because it is encapsulated from the brick class. Additionally, each behavior 
+can be implemented at runtime, and the implementation of the behavior will be different 
+in each class.The code is more modular and can be easily changed.
+The downside of this design is the complexity that can arise compared to inheritance,
+which is easier to understand who inherits from whom and how it works.
+
+2) Graphical - I created a class called GraphicLivesCounterDisplay.
+The class receives from the BrickerGameManager the dimensions for the graphical symbol,
+the remaining number of lives, a game object, and an image. Also, in this class, the
+maximum number of lives is defined. The class inherits from the game object class so that
+it can add the graphical symbol to the collection of objects in the game.
+The class creates a heart of type Heart, a class that only holds a constructor,
+and in the heart creation method, the heart is also added to the array of hearts,
+and the index of the number of hearts is increased. The array of hearts is created to hold
+all the hearts to control that the number of lives does not exceed the maximum, and also to
+ensure when the number of lives reaches 0. The update method in the class is overridden so
+that it is updated by creating hearts or deleting them by the lives counter.
+
+Numeric - I created a class called NumericCounterDisplay that receives dimensions, location,
+and a counter for the number of lives. The class has an overridden update method that
+updates the numerical number of lives according to the lives counter.
+
+In the initialization method of the main class BrickGameManager, the number of lives is 
+initialized to a constant called INITIAL_LIVES. There is a private method in the main class 
+checkLives that updates the lives counter based on the comparison of the ball's height on 
+the y-axis to the dimensions of the game window. If a collision occurs, the number of lives 
+decreases. In the class of the special behavior ExtraHeart, if there is a collision between 
+the additional heart and the main disk, the lives counter increases, and both the graphical 
+and numerical representation classes are updated accordingly.
+
+3) Puck - 
+I implemented the special behavior of the puck using a strategy and inheritance. First, I 
+implemented a Puck class in the game_object package. The class inherits the properties of 
+a ball (methods and attributes). In the constructor of this method, I defined the speeds 
+of the pucks, their starting positions, and the sound. The class has an update method that 
+updates the removal of the puck when it exits the game window boundaries. Additionally, there 
+is a method onCollisionEnter that enters the constructor of the ball and operates according 
+to the ball. In this method, the new direction and speed are updated, as well as a counter for 
+collisions for the special camera behavior. Additionally, I created a strategy class for the 
+puck (puckStrategy). This class is part of the special behaviors of the brick and is selected 
+in the strategy factory. The class has a constructor and a method onCollision that implements 
+the Collision method of the interface CollisionStrategy.The onCollision method first deletes 
+the brick that was collided with. Then, it creates the instances that will be sent to the 
+constructor of the puck in order to create it. Each time this method is called, there will be 
+a loop from 0 to the required number of pucks, which is currently 2, that will create the 
+required number of pucks.
+
+Extra heart - 
+Similar to the puck, I used the strategy design pattern for the heart. There is a class in the 
+game_object package and a strategy class in the brick_strategies package.
+The method has a constructor that receives, in addition to the standard values expected to enter 
+the super of the GameObject, also the dimensions of the game window and the maximum number of 
+lives after which lives cannot be increased (according to the task, it is 4, but it can be changed 
+in the main class BrickerGamManager).
+The class holds an update method that updates the removal of the heart from the game window if its 
+center exceeds the maximum range on the y-axis.
+Additionally, the class holds a shouldCollisionWith method (override) that is responsible for checking 
+whether there is a collision with the user's paddle.
+Finally, there is a onCollisionEnter method responsible for removing the heart if there was a collision 
+with the user's paddle. Additionally, I created the strategy class responsible for creating the heart, 
+which is selected from the random selection in the factory class called StartegyFactory.
+This class holds a method similar to the interface CollisionStartegy and generates the initial properties 
+of the heart, which are sent to the constructor of the extra heart.
+
+Camera - 
+I used the strategy design pattern. I created a CameraMove class in the game_object package. 
+In this class, there is a constructor and an update method.
+The update method updates if the number of collisions of the ball and the puck has exceeded 
+the maximum defined for the camera behavior. If it has, the camera is positioned to default 
+and reset. Additionally, there is a Camera strategy class - CameraStrategy which is selected randomly
+in the factory class StrategyFactory. This class is responsible for creating the camera. 
+It overrides the onCollision method from the CollisionStrategy interface, removes the brick, 
+checks if what hit the brick is a regular ball and not a puck, and if it is a regular ball, 
+the method checks if there is already a camera behavior. If there is, nothing happens; if not, 
+the method creates the necessary objects for the constructor of the game_objectclass - CameraMove - 
+and creates the camera.
+
+AnotherPaddle - 
+I used the strategy design pattern and inheritance. I created a class called AnotherPaddle that 
+inherits from Paddle. The class receives a constructor, and in the constructor, it receives a tag 
+that is not of the user in order to differentiate between the paddles. The class has an update method that 
+updates the movement of the paddle according to the user, similar to the user's paddle. Additionally, 
+the class has a onCollisionEnter method that checks if a ball hit the paddle in order to decrease the 
+paddle's lives, and when the paddle's lives reach zero, the paddle is deleted. I also created a strategy 
+class responsible for creating the paddle. In addition to the constructor, the class has an overridden method 
+called onColsion. This method first deletes the brick, checks that there is no other paddle already, 
+creates the new paddle, and places it in the center of the game window.
+
+4) I implemented the double behavior in the factory class StrategyFactory using a method that handles 
+it as follows: First, a random selection is made from instances that are not double. If a double is selected, 
+the doublCase method is called to handle it. Initially, another random selection is made from 1 to 5 
+(according to enum order). 
+If another double is selected, then 3 draws of 1 to 4 (excluding the double) are made to create an array with 
+three behaviors. If a double is not selected in the second draw, then a non-double behavior is added to the 
+array, and another random selection is made from 1 to 5 (including the double). If a double is selected in the
+third draw, two draws are made for 1 to 4 (excluding the double) to fill the array. If a double is not 
+selected, then the behavior that was drawn is added to the array, resulting in an array with two behaviors. 
+This method of handling doubles is simple and less sophisticated, and while there may be more flexible 
+methods available, this is the method I found most successful and therefore chose to implement.
+
+5) 
+I added to the Ball class the *** method, which resets the ball's counter. 
+This method is intended to support the camera's movement behavior,
+allowing me to count the number of ball hits until the camera's collision 
+condition is reached.
+ 
+
+
+
+
+ 
