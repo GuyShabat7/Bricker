@@ -1,40 +1,246 @@
-# 🧱 Bricker Game - Architectural Documentation
+# Bricker Game (Breakout Clone)
 
-![Game Screenshot](http://googleusercontent.com/image_generation_content/0)
+A Java breakout-style game built with a modular, extensible **Strategy Pattern** architecture for brick behaviors, plus clean UI components for **graphical** and **numeric** lives tracking.
 
-![Language](https://img.shields.io/badge/Language-Java-orange)
-![Pattern](https://img.shields.io/badge/Pattern-Strategy-blue)
-![Pattern](https://img.shields.io/badge/Pattern-Factory-green)
+![Game Screenshot](assets/game.png)
 
-An Arkanoid-style game built with Java, focusing on Object-Oriented Programming principles and Design Patterns.
+> Put a screenshot of your game at `assets/game.png` (create the `assets/` folder if it doesn’t exist).
 
 ---
 
-## 🏗️ 1. Core Design Pattern: Strategy
-The core game logic relies on the **Strategy Design Pattern** to handle brick collisions. This approach decouples the collision logic from the brick object itself, allowing for dynamic behavior changes at runtime.
+## Highlights
 
-### The Architecture
-* **Interface:** `CollisionStrategy` (located in `brick.brick_strategies`)
-* **Method:** `onCollision(GameObject obj1, GameObject obj2)`
-* **Implementation:** The `Brick` class holds a reference to a `CollisionStrategy`. Upon collision, the brick delegates the behavior to its strategy.
+- **Strategy-based brick behaviors** (runtime-composable, modular, easy to extend)
+- **Multiple special behaviors**:
+  - Puck (multi-ball)
+  - Extra Heart (extra life drop)
+  - Camera follow mode (temporary)
+  - Another Paddle (temporary extra paddle)
+  - Double behavior logic (composes multiple behaviors)
+- **Lives UI**:
+  - Graphical hearts display
+  - Numeric lives display
 
-```mermaid
-classDiagram
-    class Brick {
-        -CollisionStrategy strategy
-        +onCollision()
-    }
-    class CollisionStrategy {
-        <<interface>>
-        +onCollision(GameObject, GameObject)
-    }
-    class PuckStrategy {
-        +onCollision()
-    }
-    class CameraStrategy {
-        +onCollision()
-    }
-    
-    Brick --> CollisionStrategy
-    CollisionStrategy <|.. PuckStrategy
-    CollisionStrategy <|.. CameraStrategy
+---
+
+## Architecture Overview
+
+### 1) Brick behaviors via Strategy Pattern
+
+I implemented brick collision behaviors using a Strategy Pattern approach:
+
+- Created an interface: `CollisionStrategy` (package: `brick.brick_strategies`)
+  - Main method: `onCollision(GameObject a, GameObject b)`
+- Each **brick** holds one or more *specific behavior strategies*.
+- On brick collision:
+  - A “collision handler” iterates over the brick’s behaviors.
+  - For each behavior, its `onCollision(...)` is executed.
+- In every behavior strategy:
+  - The collided brick is removed.
+  - The **brick counter** is decremented.
+
+**Why this design**
+- Encapsulates behavior logic away from `Brick` (information hiding).
+- Behaviors can be composed and swapped **at runtime**.
+- High modularity and easier maintenance / extension.
+
+**Tradeoff**
+- More complex than an inheritance-only design (more moving parts).
+
+---
+
+## Lives System
+
+### Graphical lives display
+
+Class: `GraphicLivesCounterDisplay`
+
+- Receives from `BrickerGameManager`:
+  - symbol dimensions
+  - remaining lives count
+  - a game object collection
+  - a heart image
+- Inherits from `GameObject` so it can be added to the game objects collection.
+- Manages an array/list of `Heart` objects:
+  - Ensures lives never exceed **max lives**
+  - Properly handles deletion when lives decrease
+- Overrides `update()` to keep hearts synced with the lives counter.
+
+### Numeric lives display
+
+Class: `NumericCounterDisplay`
+
+- Receives:
+  - dimensions
+  - location
+  - lives counter
+- Overrides `update()` to reflect the current lives count on screen.
+
+### Lives logic in game manager
+
+- In `BrickGameManager`:
+  - lives initialized with `INITIAL_LIVES`
+  - `checkLives()` decreases lives when the ball falls below the bottom of the window
+- Extra Heart behavior:
+  - Increases lives on collision with the user paddle
+  - Triggers updates to both graphical + numeric displays
+
+---
+
+## Special Behaviors
+
+### 2) Puck (multi-ball)
+
+**Game object:** `Puck` (package: `game_object`)
+
+- Inherits from `Ball`
+- Constructor defines:
+  - puck speed
+  - initial position
+  - collision sound
+- `update()` removes puck when it exits window bounds
+- `onCollisionEnter(...)` uses `Ball` logic to update direction/speed
+- Also increments collision counters (relevant for camera behavior)
+
+**Strategy:** `PuckStrategy` (package: `brick_strategies`)
+
+- On collision:
+  - deletes the brick
+  - spawns a fixed number of pucks (currently **2**)
+
+---
+
+### 3) Extra Heart (extra life drop)
+
+**Game object:** `ExtraHeart`
+
+- Constructor receives:
+  - game window dimensions
+  - max lives (default **4**, configurable in `BrickerGameManager`)
+- `update()` removes the heart if it falls out of bounds
+- Overrides `shouldCollideWith(...)` to collide only with the user paddle
+- `onCollisionEnter(...)`:
+  - removes the heart
+  - increases lives counter
+
+**Strategy:** `ExtraHeartStrategy`
+
+- Spawns the heart with initial properties defined by the strategy
+
+---
+
+### 4) Camera behavior
+
+**Game object:** `CameraMove`
+
+- `update()` checks whether collision count (ball + puck) exceeded a maximum
+- If exceeded:
+  - resets camera to default position
+
+**Strategy:** `CameraStrategy`
+
+- On collision:
+  - removes the brick
+  - ensures the collider is the **main ball** (not a puck)
+  - activates camera behavior only if not already active
+
+---
+
+### 5) Another Paddle
+
+**Game object:** `AnotherPaddle`
+
+- Inherits from `Paddle`
+- Uses a non-user tag to distinguish from the main paddle
+- `update()` moves similarly to the user paddle
+- `onCollisionEnter(...)`:
+  - reduces paddle lives on ball hit
+  - removes paddle when its lives reach zero
+
+**Strategy:** `AnotherPaddleStrategy`
+
+- On collision:
+  - removes the brick
+  - spawns the additional paddle only if one doesn’t already exist
+  - places it in the center of the window
+
+---
+
+## Double Behavior (Factory Logic)
+
+In `StrategyFactory`, I implemented a “double behavior” selection process:
+
+- First draw chooses a behavior (excluding double)
+- If **double** is selected:
+  - `doubleCase()` is called
+  - Additional draws determine whether the final set contains:
+    - **2 behaviors**, or
+    - **3 behaviors** (if another double is drawn)
+- When building a multi-behavior array:
+  - double is excluded from the later “fill” draws (to avoid infinite nesting)
+
+This approach is simple and works reliably, even if more flexible designs exist.
+
+---
+
+## Ball Support for Camera
+
+I added a method to `Ball`:
+
+- `***` — resets the ball collision counter  
+  Used by the camera movement behavior to count hits until the camera reset condition is met.
+
+> Tip: Rename `***` to something descriptive like `resetCollisionCounter()` for readability.
+
+---
+
+## Running the Project
+
+Because course frameworks differ, here are the common options:
+
+- **IDE (recommended):**
+  - Open the project in IntelliJ / Eclipse
+  - Run `BrickerGameManager` (or the provided main launcher)
+
+- **Command line (if supported by your setup):**
+  - Compile and run with your project’s configured build system (Gradle/Maven) if present
+
+---
+
+## Screenshot Setup
+
+1. Create a folder named `assets/` at the project root.
+2. Add a screenshot named `game.png`:
+   - `assets/game.png`
+3. The README will automatically display it at the top.
+
+---
+
+## Project Structure (suggested)
+
+```
+src/
+  brick/
+    brick_strategies/
+      CollisionStrategy.java
+      ...
+  game_object/
+    Ball.java
+    Puck.java
+    ExtraHeart.java
+    CameraMove.java
+    AnotherPaddle.java
+  manager/
+    BrickerGameManager.java
+assets/
+  game.png
+README.md
+```
+
+---
+
+## Notes
+
+- The behavior logic is intentionally decoupled to keep `Brick` clean and enable runtime composition.
+- The UI lives counters (graphical + numeric) are kept consistent by updating from a shared lives counter.
+
