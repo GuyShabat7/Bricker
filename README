@@ -1,4 +1,25 @@
-🧱 Bricker Game - Architectural DocumentationAn Arkanoid-style game built with Java, focusing on Object-Oriented Programming principles and Design Patterns.🏗️ 1. Core Design Pattern: StrategyThe core game logic relies on the Strategy Design Pattern to handle brick collisions. This approach decouples the collision logic from the brick object itself, allowing for dynamic behavior changes at runtime.The ArchitectureInterface: CollisionStrategy (located in brick.brick_strategies)Method: onCollision(GameObject obj1, GameObject obj2)Implementation: The Brick class holds a reference to a CollisionStrategy. Upon collision, the brick delegates the behavior to its strategy.קטע קודclassDiagram
+# 🧱 Bricker Game - Architectural Documentation
+
+![Game Screenshot](http://googleusercontent.com/image_generation_content/0)
+
+![Language](https://img.shields.io/badge/Language-Java-orange)
+![Pattern](https://img.shields.io/badge/Pattern-Strategy-blue)
+![Pattern](https://img.shields.io/badge/Pattern-Factory-green)
+
+An Arkanoid-style game built with Java, focusing on Object-Oriented Programming principles and Design Patterns.
+
+---
+
+## 🏗️ 1. Core Design Pattern: Strategy
+The core game logic relies on the **Strategy Design Pattern** to handle brick collisions. This approach decouples the collision logic from the brick object itself, allowing for dynamic behavior changes at runtime.
+
+### The Architecture
+* **Interface:** `CollisionStrategy` (located in `brick.brick_strategies`)
+* **Method:** `onCollision(GameObject obj1, GameObject obj2)`
+* **Implementation:** The `Brick` class holds a reference to a `CollisionStrategy`. Upon collision, the brick delegates the behavior to its strategy.
+
+```mermaid
+classDiagram
     class Brick {
         -CollisionStrategy strategy
         +onCollision()
@@ -17,15 +38,3 @@
     Brick --> CollisionStrategy
     CollisionStrategy <|.. PuckStrategy
     CollisionStrategy <|.. CameraStrategy
-The Logic flowTrigger: A collision event calls onCollision.Execution: The specific strategy executes unique logic (e.g., spawn puck, change camera).Cleanup: The brick is removed from the game collection, and the global counter decrements.Trade-offs: > * Pros: High modularity. Behaviors are hot-swappable.Cons: Increased class count compared to simple inheritance.❤️ 2. Lives Display & ManagementThe game synchronizes two display systems using the BrickerGameManager.ComponentClassDescriptionGraphicalGraphicLivesCounterDisplayVisualizes lives as Heart Icons. Manages an internal array of objects to add/remove hearts dynamically based on the counter.NumericNumericCounterDisplayRenders the number of lives as Text at a specific screen location.Integration Logic:The BrickerGameManager tracks the Ball's Y-coordinate.Javaif (ball.getY() > windowBounds) {
-    lives--; // Triggers updates in both displays
-}
-🚀 3. Special Game BehaviorsImplemented via specific Strategy classes and custom GameObject extensions.🏒 The PuckClasses: Puck (extends Ball), PuckStrategyBehavior: Spawns multiple pucks (default: 2) with random speed/direction.Polymorphism: Overrides onCollisionEnter for specific audio and counting logic, but acts as a ball for physics.❤️ Extra HeartClasses: ExtraHeart, ExtraHeartStrategyBehavior: Spawns a falling heart.Collect: Colliding with the Paddle adds a life (Max: 4).Miss: Falling past the screen removes the object.🎥 Camera MovementClasses: CameraMove, CameraStrategyTrigger: Activated only when the Main Ball hits the brick.Effect: Focuses the camera on the ball.Reset: Auto-resets after the ball collides with a defined number of objects.🏏 Another PaddleClasses: AnotherPaddle, AnotherPaddleStrategyLogic: Ensures only one extra paddle exists at a time.Properties:Mimics user input.Has a separate health counter (disappears after taking hits).🏭 4. Factory & Double BehaviorThe StrategyFactory uses a probabilistic algorithm to generate behaviors, capable of handling "Double Behaviors" (up to 3 distinct effects).Selection Algorithm Flow:קטע קודgraph TD
-    Start[Generate Strategy] --> Roll{Roll Random}
-    Roll -->|Standard| Simple[Add Strategy]
-    Roll -->|Double Behavior| CheckDouble{Double Logic}
-    
-    CheckDouble --> Roll2[Roll Again]
-    Roll2 -->|Double Again| Triple[Add 3 Distinct Strategies]
-    Roll2 -->|Not Double| DoubleStandard[Add 1st + Roll for 2nd]
-Initial Roll: Select a random behavior.Double Case: If "Double" is selected, enter recursion handling.Limit: Prevents infinite "Double" loops.Result: Can return a simple strategy, a double strategy, or a specialized case (e.g., 3 strategies if "Double" is rolled twice).
