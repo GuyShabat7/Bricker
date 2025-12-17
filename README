@@ -1,91 +1,31 @@
-# Bricker Game - Architectural Documentation
-
-http://googleusercontent.com/image_generation_content/0
-
-## 1. Core Design Pattern: Strategy
-The core game logic relies on the **Strategy Design Pattern** to handle brick collisions. This approach decouples the collision logic from the brick object itself.
-
-* **Interface:** `CollisionStrategy` (located in `brick.brick_strategies`).
-* **Method:** `onCollision(GameObject obj1, GameObject obj2)`.
-* **Implementation:** The `Brick` class holds a reference to a `CollisionStrategy`. Upon collision, the brick delegates the behavior to its strategy.
-
-**The Logic:**
-When a brick is hit, the `onCollision` method is triggered. For most standard behaviors:
-1.  The specific strategy executes its unique logic (e.g., spawning a puck, changing camera).
-2.  The brick is deleted from the game object collection.
-3.  The global brick counter is decremented.
-
-**Advantages & Trade-offs:**
-* **Pros:** High modularity and encapsulation. New behaviors can be added at runtime without modifying the `Brick` class.
-* **Cons:** Increased complexity compared to simple inheritance. Requires managing multiple classes and object references.
-
----
-
-## 2. Lives Display & Management
-The game manages player lives using two synchronized display systems.
-
-### Graphical Display (`GraphicLivesCounterDisplay`)
-This class inherits from `GameObject` and visualizes lives as heart icons.
-* **Initialization:** Receives dimensions, the `BrickerGameManager`, and an image asset.
-* **Logic:** It maintains an internal array of `Heart` objects.
-    * **Updates:** The `update` method monitors the lives counter. It adds `Heart` objects to the array (and game) or removes them to match the current life count.
-    * **Constraints:** Ensures lives do not exceed the maximum defined limit (default: 4) and handles the "Game Over" state when lives reach 0.
-
-### Numeric Display (`NumericCounterDisplay`)
-A simpler representation that inherits from `GameObject`. It renders the number of lives as text at a specific screen location, updating dynamically via the `update` method.
-
-### Integration
-The `BrickerGameManager` initializes `INITIAL_LIVES` and holds a `checkLives` method. This method tracks the ball's Y-coordinate; if the ball falls below the window bounds, the life counter is decremented, triggering updates in both the Graphical and Numeric displays.
-
----
-
-## 3. Special Game Behaviors
-These behaviors are implemented via specific Strategy classes and, where necessary, custom Game Objects.
-
-### 🏒 The Puck
-**Classes:** `Puck` (extends `Ball`) and `PuckStrategy`.
-
-* **Behavior:** When a "Puck Brick" is broken, the `PuckStrategy` spawns multiple pucks (currently set to 2).
-* **Physics:** The `Puck` class calculates its own random speed and direction upon instantiation. It handles its own removal when it exits the game borders.
-* **Polymorphism:** It overrides `onCollisionEnter` to behave like a ball but includes specific logic for audio and collision counting.
-
-### ❤️ Extra Heart
-**Classes:** `ExtraHeart` and `ExtraHeartStrategy`.
-
-* **Strategy:** The `ExtraHeartStrategy` spawns a falling heart object when the brick is broken.
-* **Object Logic:** The `ExtraHeart` falls vertically.
-    * **Collection:** If it collides with the main Paddle, the player gains a life (up to the max of 4), and the heart is removed.
-    * **Miss:** If the heart falls past the screen bottom, it is removed without effect.
-
-### 🎥 Camera Movement
-**Classes:** `CameraMove` (extends `GameObject`) and `CameraStrategy`.
-
-* **Strategy:** Checks if the object hitting the brick is the main Ball (not a Puck). If active, it creates a `CameraMove` object.
-* **Behavior:** The camera focuses on the ball. The `Ball` class includes a specific counter reset method to support this.
-* **Reset:** The `CameraMove` object tracks ball collisions. Once the ball hits a defined number of objects, the camera resets to the default view and the object is deleted.
-
-### 🏏 Another Paddle
-**Classes:** `AnotherPaddle` (extends `Paddle`) and `AnotherPaddleStrategy`.
-
-* **Strategy:** Checks if a second paddle already exists. If not, it instantiates a new one in the center of the screen.
-* **Behavior:**
-    * **Movement:** Mimics the user's input exactly like the main paddle.
-    * **Lives:** The paddle has its own hit counter. If a ball hits it, its health decreases. Upon reaching zero, the paddle disappears.
-    * **Tagging:** Uses a unique tag to differentiate it from the main player paddle.
-
----
-
-## 4. Factory & Double Behavior
-The `StrategyFactory` generates behaviors. I implemented a custom algorithm to handle "Double Behaviors" (a brick with two effects).
-
-**The Selection Algorithm:**
-1.  **Initial Roll:** Select a random behavior.
-2.  **Double Case:** If "Double" is selected, the `doubleCase` handler is triggered.
-3.  **Recursive Logic:**
-    * Roll 1-5 (checking for Double again).
-    * **If Double again:** Roll 3 distinct *non-double* behaviors.
-    * **If not Double:** Add the first behavior, then roll again.
-        * If the next roll is Double: Roll 2 distinct *non-double* behaviors.
-        * If not: Add the behavior (resulting in 2 total behaviors).
-
-This probabilistic approach ensures a variety of gameplay combinations while preventing infinite recursion of "Double" strategies.
+🧱 Bricker Game - Architectural DocumentationAn Arkanoid-style game built with Java, focusing on Object-Oriented Programming principles and Design Patterns.🏗️ 1. Core Design Pattern: StrategyThe core game logic relies on the Strategy Design Pattern to handle brick collisions. This approach decouples the collision logic from the brick object itself, allowing for dynamic behavior changes at runtime.The ArchitectureInterface: CollisionStrategy (located in brick.brick_strategies)Method: onCollision(GameObject obj1, GameObject obj2)Implementation: The Brick class holds a reference to a CollisionStrategy. Upon collision, the brick delegates the behavior to its strategy.קטע קודclassDiagram
+    class Brick {
+        -CollisionStrategy strategy
+        +onCollision()
+    }
+    class CollisionStrategy {
+        <<interface>>
+        +onCollision(GameObject, GameObject)
+    }
+    class PuckStrategy {
+        +onCollision()
+    }
+    class CameraStrategy {
+        +onCollision()
+    }
+    
+    Brick --> CollisionStrategy
+    CollisionStrategy <|.. PuckStrategy
+    CollisionStrategy <|.. CameraStrategy
+The Logic flowTrigger: A collision event calls onCollision.Execution: The specific strategy executes unique logic (e.g., spawn puck, change camera).Cleanup: The brick is removed from the game collection, and the global counter decrements.Trade-offs: > * Pros: High modularity. Behaviors are hot-swappable.Cons: Increased class count compared to simple inheritance.❤️ 2. Lives Display & ManagementThe game synchronizes two display systems using the BrickerGameManager.ComponentClassDescriptionGraphicalGraphicLivesCounterDisplayVisualizes lives as Heart Icons. Manages an internal array of objects to add/remove hearts dynamically based on the counter.NumericNumericCounterDisplayRenders the number of lives as Text at a specific screen location.Integration Logic:The BrickerGameManager tracks the Ball's Y-coordinate.Javaif (ball.getY() > windowBounds) {
+    lives--; // Triggers updates in both displays
+}
+🚀 3. Special Game BehaviorsImplemented via specific Strategy classes and custom GameObject extensions.🏒 The PuckClasses: Puck (extends Ball), PuckStrategyBehavior: Spawns multiple pucks (default: 2) with random speed/direction.Polymorphism: Overrides onCollisionEnter for specific audio and counting logic, but acts as a ball for physics.❤️ Extra HeartClasses: ExtraHeart, ExtraHeartStrategyBehavior: Spawns a falling heart.Collect: Colliding with the Paddle adds a life (Max: 4).Miss: Falling past the screen removes the object.🎥 Camera MovementClasses: CameraMove, CameraStrategyTrigger: Activated only when the Main Ball hits the brick.Effect: Focuses the camera on the ball.Reset: Auto-resets after the ball collides with a defined number of objects.🏏 Another PaddleClasses: AnotherPaddle, AnotherPaddleStrategyLogic: Ensures only one extra paddle exists at a time.Properties:Mimics user input.Has a separate health counter (disappears after taking hits).🏭 4. Factory & Double BehaviorThe StrategyFactory uses a probabilistic algorithm to generate behaviors, capable of handling "Double Behaviors" (up to 3 distinct effects).Selection Algorithm Flow:קטע קודgraph TD
+    Start[Generate Strategy] --> Roll{Roll Random}
+    Roll -->|Standard| Simple[Add Strategy]
+    Roll -->|Double Behavior| CheckDouble{Double Logic}
+    
+    CheckDouble --> Roll2[Roll Again]
+    Roll2 -->|Double Again| Triple[Add 3 Distinct Strategies]
+    Roll2 -->|Not Double| DoubleStandard[Add 1st + Roll for 2nd]
+Initial Roll: Select a random behavior.Double Case: If "Double" is selected, enter recursion handling.Limit: Prevents infinite "Double" loops.Result: Can return a simple strategy, a double strategy, or a specialized case (e.g., 3 strategies if "Double" is rolled twice).
