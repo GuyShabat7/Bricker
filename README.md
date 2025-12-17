@@ -1,6 +1,7 @@
 # 🧱 Bricker 
 
-![Uploading Gemini_Generated_Image_jxzluojxzluojxzl.png…]()
+<img width="2816" height="1536" alt="Gemini_Generated_Image_jxzluojxzluojxzl" src="https://github.com/user-attachments/assets/5ca5a050-6448-4239-8791-b777e0e09597" />
+
 
 
 > A robust, object-oriented implementation of the classic Arkanoid game developed in Java. This project emphasizes modular design using Design Patterns like **Strategy** and **Factory** to manage complex game behaviors.
@@ -109,4 +110,5 @@ classDiagram
     CameraStrategy ..> CameraMove : Activates
     HeartStrategy ..> Heart : Spawns
     DoubleStrategy --> CollisionStrategy : Composes
+
 
