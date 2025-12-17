@@ -67,48 +67,7 @@ Both displays listen to the centralized `checkLives` method in the main manager,
 
 ---
 
-## 📊 Class Diagram (Architecture Overview)
 
-```mermaid
-classDiagram
-    class BrickerGameManager {
-        -checkLives()
-    }
-    class Brick {
-        -CollisionStrategy strategy
-    }
-    class CollisionStrategy {
-        <<interface>>
-        +onCollision(GameObject, Counter)
-    }
-    class StrategyFactory {
-        +getStrategy()
-    }
-    
-    %% Strategies
-    class PuckStrategy
-    class CameraStrategy
-    class HeartStrategy
-    class DoubleStrategy
-    
-    %% Game Objects
-    class Puck
-    class CameraMove
-    class Heart
-    class AnotherPaddle
-    
-    BrickerGameManager --> StrategyFactory : Uses
-    StrategyFactory ..> CollisionStrategy : Creates
-    Brick --> CollisionStrategy : Has
-    
-    CollisionStrategy <|.. PuckStrategy
-    CollisionStrategy <|.. CameraStrategy
-    CollisionStrategy <|.. HeartStrategy
-    CollisionStrategy <|.. DoubleStrategy
-    
-    PuckStrategy ..> Puck : Spawns
-    CameraStrategy ..> CameraMove : Activates
-    HeartStrategy ..> Heart : Spawns
-    DoubleStrategy --> CollisionStrategy : Composes
+
 
 
