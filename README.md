@@ -1,4 +1,7 @@
-# 🧱 Bricker - Arkanoid Clone
+# 🧱 Bricker 
+
+![Uploading Gemini_Generated_Image_jxzluojxzluojxzl.png…]()
+
 
 > A robust, object-oriented implementation of the classic Arkanoid game developed in Java. This project emphasizes modular design using Design Patterns like **Strategy** and **Factory** to manage complex game behaviors.
 
@@ -106,3 +109,4 @@ classDiagram
     CameraStrategy ..> CameraMove : Activates
     HeartStrategy ..> Heart : Spawns
     DoubleStrategy --> CollisionStrategy : Composes
+
